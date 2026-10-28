@@ -242,30 +242,6 @@ def inscripcion_eliminar(enrollment_id):
         return redirect(url_for('curso_detalle', course_id=redirect_curso))
     return redirect(url_for('inscripciones_lista'))
 
-# ====================================================================
-# MODULO: SCRIPTS SQL
-# ====================================================================
-@app.route('/scripts-sql')
-def scripts_sql():
-    base_dir = os.path.dirname(__file__)
-    def leer_archivo(nombre):
-        try:
-            with open(os.path.join(base_dir, 'database', nombre), 'r', encoding='utf-8') as f:
-                return f.read()
-        except:
-            return ""
-
-    script_mysql = leer_archivo('schema_mysql.sql')
-    script_postgres = leer_archivo('schema_postgres.sql')
-    script_sqlite = leer_archivo('schema_sqlite.sql')
-    script_supabase = leer_archivo('schema_supabase.sql')
-
-    return render_template('scripts_sql.html', 
-                           script_mysql=script_mysql,
-                           script_postgres=script_postgres,
-                           script_sqlite=script_sqlite,
-                           script_supabase=script_supabase)
-
 if __name__ == '__main__':
     print("==================================================================")
     print(" 🎵 La Escuelita German Siman - Sistema de Gestion")
