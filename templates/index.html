@@ -1,0 +1,190 @@
+{% extends 'base.html' %}
+
+{% block title %}Panel Principal{% endblock %}
+
+{% block content %}
+<div class="space-y-8">
+    <!-- Header de Bienvenida -->
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4 bg-gradient-to-r from-slate-950 via-slate-900 to-amber-950/40 p-6 md:p-8 rounded-2xl border border-slate-800 shadow-xl">
+        <div>
+            <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight flex items-center gap-3">
+                <span>Panel de Control</span>
+                <span class="text-xs bg-emerald-500/20 text-emerald-300 font-semibold px-2.5 py-1 rounded-full border border-emerald-500/30 flex items-center gap-1.5">
+                    <span class="w-2 h-2 rounded-full bg-emerald-400 animate-pulse"></span>
+                    <span>Supabase Cloud</span>
+                </span>
+            </h1>
+            <p class="text-slate-400 mt-1 text-sm md:text-base">Bienvenido al sistema de administración de alumnos, cursos y cobros de La Escuelita Germán Simán.</p>
+        </div>
+        <div class="flex flex-wrap gap-2">
+            <a href="{{ url_for('alumnos_lista') }}" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Nuevo Alumno</span>
+            </a>
+            <a href="{{ url_for('cursos_lista') }}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-semibold rounded-xl text-sm transition border border-slate-700 flex items-center gap-2">
+                <i class="fa-solid fa-plus"></i>
+                <span>Nuevo Curso</span>
+            </a>
+            <a href="{{ url_for('inscripciones_lista') }}" class="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-amber-400 font-semibold rounded-xl text-sm transition border border-amber-500/30 flex items-center gap-2">
+                <i class="fa-solid fa-link"></i>
+                <span>Asignar a Curso</span>
+            </a>
+        </div>
+    </div>
+
+    <!-- TARJETAS DE METRICAS -->
+    <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+        <!-- Total Alumnos -->
+        <div class="bg-slate-950/60 backdrop-blur p-5 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Total Alumnos</p>
+                    <p class="text-3xl font-black text-white mt-1">{{ total_alumnos }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-sky-500/10 border border-sky-500/20 text-sky-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-user-graduate"></i>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span>Registrados en el sistema</span>
+                <a href="{{ url_for('alumnos_lista') }}" class="text-amber-400 hover:underline">Ver todos &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Total Cursos -->
+        <div class="bg-slate-950/60 backdrop-blur p-5 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Cursos Activos</p>
+                    <p class="text-3xl font-black text-white mt-1">{{ total_cursos }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-amber-500/10 border border-amber-500/20 text-amber-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-guitar"></i>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span>Materias y talleres</span>
+                <a href="{{ url_for('cursos_lista') }}" class="text-amber-400 hover:underline">Gestionar &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Inscripciones Activas -->
+        <div class="bg-slate-950/60 backdrop-blur p-5 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Matriculaciones</p>
+                    <p class="text-3xl font-black text-white mt-1">{{ total_inscripciones }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-clipboard-check"></i>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span>Alumnos en cursos</span>
+                <a href="{{ url_for('inscripciones_lista') }}" class="text-amber-400 hover:underline">Ver asignaciones &rarr;</a>
+            </div>
+        </div>
+
+        <!-- Facturación / Recaudación Estimada -->
+        <div class="bg-slate-950/60 backdrop-blur p-5 rounded-2xl border border-slate-800 hover:border-amber-500/40 transition">
+            <div class="flex items-center justify-between">
+                <div>
+                    <p class="text-xs font-bold uppercase tracking-wider text-slate-400">Recaudación Estimada</p>
+                    <p class="text-2xl font-black text-amber-400 mt-1">${{ "{:,.2f}".format(recaudacion_estimada) }}</p>
+                </div>
+                <div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 text-purple-400 flex items-center justify-center text-xl">
+                    <i class="fa-solid fa-coins"></i>
+                </div>
+            </div>
+            <div class="mt-4 pt-3 border-t border-slate-800/80 flex items-center justify-between text-xs text-slate-400">
+                <span>Suma de aranceles activos</span>
+                <span class="text-emerald-400 font-semibold">Proyección mensual</span>
+            </div>
+        </div>
+    </div>
+
+    <!-- DOS COLUMNAS: CURSOS POPULARES Y ULTIMAS ASIGNACIONES -->
+    <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <!-- Cursos Principales -->
+        <div class="bg-slate-950/60 rounded-2xl border border-slate-800 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-ranking-star text-amber-400"></i>
+                    <span>Cursos y Ocupación</span>
+                </h2>
+                <a href="{{ url_for('cursos_lista') }}" class="text-xs font-semibold text-amber-400 hover:underline">Ver catálogo</a>
+            </div>
+
+            <div class="space-y-3">
+                {% for c in cursos_populares %}
+                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition">
+                        <div>
+                            <a href="{{ url_for('curso_detalle', course_id=c.id) }}" class="font-bold text-sm text-white hover:text-amber-400 transition">
+                                {{ c.name or c.nombre }}
+                            </a>
+                            <div class="text-xs text-slate-400 flex items-center gap-2 mt-0.5">
+                                <span class="bg-slate-800 px-2 py-0.5 rounded text-slate-300">Cobro: {{ c.billing_period or c.periodo_pago }}</span>
+                                <span class="text-amber-400/90 font-semibold">${{ "{:,.2f}".format(c.cost or c.costo or 0) }}</span>
+                            </div>
+                        </div>
+                        <div class="flex items-center gap-3">
+                            <span class="text-xs px-2.5 py-1 rounded-full bg-amber-500/10 text-amber-300 font-bold border border-amber-500/20">
+                                {{ c.students_count or c.cant_alumnos or 0 }} alumnos
+                            </span>
+                            <a href="{{ url_for('curso_detalle', course_id=c.id) }}" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 text-xs">
+                                <i class="fa-solid fa-arrow-right"></i>
+                            </a>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-slate-500 text-sm py-4 text-center">No hay cursos cargados aún.</p>
+                {% endfor %}
+            </div>
+        </div>
+
+        <!-- Últimas Inscripciones -->
+        <div class="bg-slate-950/60 rounded-2xl border border-slate-800 p-6">
+            <div class="flex items-center justify-between mb-4">
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-clock-rotate-left text-amber-400"></i>
+                    <span>Últimas Asignaciones</span>
+                </h2>
+                <a href="{{ url_for('inscripciones_lista') }}" class="text-xs font-semibold text-amber-400 hover:underline">Ver todas</a>
+            </div>
+
+            <div class="space-y-3">
+                {% for i in ultimas_inscripciones %}
+                    {% set st = i.students or {} %}
+                    {% set co = i.courses or {} %}
+                    {% set st_nombre = st.first_name or i.alumno_nombre or 'Alumno' %}
+                    {% set st_apellido = st.last_name or i.alumno_apellido or '' %}
+                    {% set co_nombre = co.name or i.curso_nombre or 'Curso' %}
+                    {% set co_costo = co.cost or i.costo or 0 %}
+                    {% set co_periodo = co.billing_period or i.periodo_pago or 'Mensual' %}
+                    {% set i_estado = i.status or i.estado or 'active' %}
+                    {% set i_fecha = (i.assigned_at[:10] if i.assigned_at else i.fecha_inscripcion) or '' %}
+                    <div class="p-3.5 rounded-xl bg-slate-900/80 border border-slate-800/80 flex items-center justify-between hover:border-slate-700 transition">
+                        <div class="flex items-center gap-3">
+                            <div class="w-9 h-9 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/20">
+                                {{ st_nombre[0] }}{{ st_apellido[0] if st_apellido else '' }}
+                            </div>
+                            <div>
+                                <p class="text-sm font-bold text-white">{{ st_nombre }} {{ st_apellido }}</p>
+                                <p class="text-xs text-slate-400">{{ co_nombre }} &bull; <span class="text-amber-400/90 font-medium">${{ "{:,.2f}".format(co_costo) }} ({{ co_periodo }})</span></p>
+                            </div>
+                        </div>
+                        <div class="text-right">
+                            <span class="inline-block text-xs px-2.5 py-0.5 rounded-full font-semibold {{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' if i_estado in ['active', 'Activo'] else 'bg-slate-800 text-slate-400' }}">
+                                {{ 'Activo' if i_estado in ['active', 'Activo'] else i_estado }}
+                            </span>
+                            <p class="text-[10px] text-slate-500 mt-0.5">{{ i_fecha }}</p>
+                        </div>
+                    </div>
+                {% else %}
+                    <p class="text-slate-500 text-sm py-4 text-center">No hay alumnos asignados a cursos todavía.</p>
+                {% endfor %}
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

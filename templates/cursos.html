@@ -1,0 +1,293 @@
+{% extends 'base.html' %}
+
+{% block title %}Cursos{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Header del módulo -->
+    <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+            <h1 class="text-2xl font-black text-white tracking-tight flex items-center gap-2">
+                <i class="fa-solid fa-guitar text-amber-400"></i>
+                <span>Cursos y Aranceles</span>
+            </h1>
+            <p class="text-slate-400 text-sm">Configura los talleres, instrumentos, costos y periodicidad de pagos.</p>
+        </div>
+        <button onclick="abrirModalCrearCurso()" class="px-4 py-2.5 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20 flex items-center gap-2 self-start sm:self-auto">
+            <i class="fa-solid fa-plus"></i>
+            <span>Nuevo Curso</span>
+        </button>
+    </div>
+
+    <!-- Grid de Cursos -->
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        {% for c in cursos %}
+        {% set c_nombre = c.name or c.nombre %}
+        {% set c_desc = c.description or c.descripcion or '' %}
+        {% set c_costo = c.cost or c.costo or 0 %}
+        {% set c_periodo = c.billing_period or c.periodo_pago or 'Mensual' %}
+        {% set c_dia_venc = c.payment_due_day or c.dia_vencimiento or 10 %}
+        {% set c_cant = c.students_count if c.students_count is defined else (c.cant_inscriptos or 0) %}
+        {% set c_activo = c.active if c.active is defined else (c.activo == 1) %}
+        <div class="bg-slate-950/70 border border-slate-800 hover:border-amber-500/40 rounded-2xl p-6 flex flex-col justify-between transition shadow-xl relative overflow-hidden group">
+            <!-- Barra superior de estado -->
+            <div class="absolute top-0 left-0 right-0 h-1 bg-gradient-to-r from-amber-500 to-amber-300 opacity-80"></div>
+            
+            <div>
+                <div class="flex items-start justify-between gap-3 mb-3">
+                    <span class="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider {{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' if c_activo else 'bg-rose-500/10 text-rose-400 border border-rose-500/20' }}">
+                        {{ 'Activo' if c_activo else 'Inactivo' }}
+                    </span>
+                    <div class="text-right">
+                        <span class="text-xs text-slate-400 block uppercase font-bold tracking-wider">Costo / Arancel</span>
+                        <span class="text-2xl font-black text-amber-400">${{ "{:,.2f}".format(c_costo) }}</span>
+                    </div>
+                </div>
+
+                <h3 class="text-xl font-bold text-white group-hover:text-amber-400 transition">
+                    {{ c_nombre }}
+                </h3>
+                <p class="text-slate-400 text-xs mt-1.5 line-clamp-2 min-h-[32px]">
+                    {{ c_desc or 'Sin descripción detallada.' }}
+                </p>
+
+                <!-- Parámetros de Pago y Vencimiento -->
+                <div class="mt-4 pt-4 border-t border-slate-800/80 space-y-2 text-xs">
+                    <div class="flex items-center justify-between text-slate-300">
+                        <span class="flex items-center gap-2 text-slate-400">
+                            <i class="fa-solid fa-repeat text-amber-400/80 w-4"></i>
+                            <span>Periodo de pago:</span>
+                        </span>
+                        <span class="font-bold bg-slate-900 px-2 py-0.5 rounded border border-slate-800 text-white">
+                            {{ c_periodo }}
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-slate-300">
+                        <span class="flex items-center gap-2 text-slate-400">
+                            <i class="fa-regular fa-calendar-check text-amber-400/80 w-4"></i>
+                            <span>Vencimiento:</span>
+                        </span>
+                        <span class="font-medium text-slate-200">
+                            Día <strong class="text-amber-300">{{ c_dia_venc }}</strong> de cada mes
+                        </span>
+                    </div>
+
+                    <div class="flex items-center justify-between text-slate-300">
+                        <span class="flex items-center gap-2 text-slate-400">
+                            <i class="fa-solid fa-users text-amber-400/80 w-4"></i>
+                            <span>Alumnos inscriptos:</span>
+                        </span>
+                        <span class="font-bold text-amber-400">
+                            {{ c_cant }} estudiantes
+                        </span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Acciones al pie -->
+            <div class="mt-6 pt-4 border-t border-slate-800 flex items-center justify-between gap-2">
+                <a href="{{ url_for('curso_detalle', course_id=c.id) }}" class="flex-1 py-2 px-3 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 rounded-xl text-xs font-bold text-center transition flex items-center justify-center gap-2">
+                    <i class="fa-solid fa-user-group"></i>
+                    <span>Ver Alumnos</span>
+                </a>
+
+                <div class="flex items-center gap-1.5">
+                    <button onclick="abrirModalEditarCurso('{{ c.id }}', '{{ c_nombre }}', '{{ c_desc }}', {{ c_costo }}, '{{ c_periodo }}', {{ c_dia_venc }})" 
+                            class="p-2 rounded-xl bg-slate-900 hover:bg-slate-800 text-slate-300 hover:text-white border border-slate-800 text-xs transition" title="Editar">
+                        <i class="fa-solid fa-pen-to-square"></i>
+                    </button>
+
+                    <form action="{{ url_for('curso_eliminar', course_id=c.id) }}" method="POST" onsubmit="return confirm('¿Seguro de eliminar el curso {{ c_nombre }} de Supabase?')" class="inline">
+                        <button type="submit" class="p-2 rounded-xl bg-slate-900 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 border border-slate-800 hover:border-rose-500/30 text-xs transition" title="Eliminar">
+                            <i class="fa-regular fa-trash-can"></i>
+                        </button>
+                    </form>
+                </div>
+            </div>
+        </div>
+        {% else %}
+        <div class="col-span-full py-12 text-center bg-slate-950/50 rounded-2xl border border-slate-800">
+            <i class="fa-solid fa-guitar text-4xl text-slate-600 mb-3 block"></i>
+            <p class="text-slate-400 font-medium">No se han registrado cursos todavía.</p>
+            <p class="text-xs text-slate-500 mt-1">Crea el primer curso (Batería, Guitarra, Canto, Piano) para empezar.</p>
+        </div>
+        {% endfor %}
+    </div>
+</div>
+
+<!-- MODAL: NUEVO CURSO -->
+<div id="modalCrearCurso" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-guitar text-amber-400"></i>
+                <span>Crear Nuevo Curso</span>
+            </h3>
+            <button onclick="cerrarModalCrearCurso()" class="text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form action="{{ url_for('curso_crear') }}" method="POST" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Nombre del Curso *</label>
+                <input type="text" name="nombre" required placeholder="Ej: Batería y Percusión" 
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Descripción</label>
+                <textarea name="descripcion" rows="2" placeholder="Detalles, modalidad o nivel..." 
+                          class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white placeholder-slate-500 text-sm focus:outline-none focus:border-amber-500"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Costo / Arancel ($) *</label>
+                    <input type="number" step="0.01" name="costo" required placeholder="35000" 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Período de Pago *</label>
+                    <select name="periodo_pago" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                        <option value="Mensual" selected>Mensual</option>
+                        <option value="Quincenal">Quincenal</option>
+                        <option value="Bimestral">Bimestral</option>
+                        <option value="Semestral">Semestral</option>
+                        <option value="Anual">Anual</option>
+                        <option value="Pago Único">Pago Único (Taller/Masterclass)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Día Vencimiento Mensual</label>
+                    <input type="number" name="dia_vencimiento" value="10" min="1" max="31" 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500" placeholder="Ej: 10">
+                    <span class="text-[11px] text-slate-500">Día del mes límite para abonar la cuota</span>
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fecha Límite Fija (Opcional)</label>
+                    <input type="date" name="fecha_limite_pago" 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                    <span class="text-[11px] text-slate-500">Para cursos con fecha tope específica</span>
+                </div>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+                <button type="button" onclick="cerrarModalCrearCurso()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20">
+                    Guardar Curso
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+<!-- MODAL: EDITAR CURSO -->
+<div id="modalEditarCurso" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-lg w-full p-6 shadow-2xl relative">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <h3 class="text-lg font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-pen-to-square text-amber-400"></i>
+                <span>Editar Curso</span>
+            </h3>
+            <button onclick="cerrarModalEditarCurso()" class="text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form id="formEditarCurso" method="POST" class="mt-4 space-y-4">
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Nombre del Curso *</label>
+                <input type="text" id="edit_curso_nombre" name="nombre" required 
+                       class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Descripción</label>
+                <textarea id="edit_curso_descripcion" name="descripcion" rows="2" 
+                          class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500"></textarea>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Costo / Arancel ($) *</label>
+                    <input type="number" step="0.01" id="edit_curso_costo" name="costo" required 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Período de Pago *</label>
+                    <select id="edit_curso_periodo" name="periodo_pago" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                        <option value="Mensual">Mensual</option>
+                        <option value="Quincenal">Quincenal</option>
+                        <option value="Bimestral">Bimestral</option>
+                        <option value="Semestral">Semestral</option>
+                        <option value="Anual">Anual</option>
+                        <option value="Pago Único">Pago Único (Taller/Masterclass)</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Día Vencimiento Mensual</label>
+                    <input type="number" id="edit_curso_dia_venc" name="dia_vencimiento" min="1" max="31" 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                </div>
+                <div>
+                    <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Fecha Límite Fija</label>
+                    <input type="date" id="edit_curso_fecha_limite" name="fecha_limite_pago" 
+                           class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Estado</label>
+                <select id="edit_curso_activo" name="activo" class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                    <option value="1">Activo</option>
+                    <option value="0">Inactivo / Pausado</option>
+                </select>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+                <button type="button" onclick="cerrarModalEditarCurso()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function abrirModalCrearCurso() {
+        document.getElementById('modalCrearCurso').classList.remove('hidden');
+    }
+    function cerrarModalCrearCurso() {
+        document.getElementById('modalCrearCurso').classList.add('hidden');
+    }
+
+    function abrirModalEditarCurso(id, nombre, desc, costo, periodo, diaVenc) {
+        const form = document.getElementById('formEditarCurso');
+        form.action = `/cursos/${id}/editar`;
+        document.getElementById('edit_curso_nombre').value = nombre;
+        document.getElementById('edit_curso_descripcion').value = desc || '';
+        document.getElementById('edit_curso_costo').value = costo;
+        document.getElementById('edit_curso_periodo').value = periodo;
+        document.getElementById('edit_curso_dia_venc').value = diaVenc || 10;
+        document.getElementById('modalEditarCurso').classList.remove('hidden');
+    }
+    function cerrarModalEditarCurso() {
+        document.getElementById('modalEditarCurso').classList.add('hidden');
+    }
+</script>
+{% endblock %}

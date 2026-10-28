@@ -1,0 +1,201 @@
+{% extends 'base.html' %}
+
+{% block title %}{{ curso.name or curso.nombre }}{% endblock %}
+
+{% block content %}
+{% set c_nombre = curso.name or curso.nombre %}
+{% set c_desc = curso.description or curso.descripcion or '' %}
+{% set c_costo = curso.cost or curso.costo or 0 %}
+{% set c_periodo = curso.billing_period or curso.periodo_pago or 'Mensual' %}
+{% set c_dia_venc = curso.payment_due_day or curso.dia_vencimiento or 10 %}
+{% set c_activo = curso.active if curso.active is defined else (curso.activo == 1) %}
+<div class="space-y-6">
+    <!-- Navegación de regreso -->
+    <div>
+        <a href="{{ url_for('cursos_lista') }}" class="text-xs font-semibold text-slate-400 hover:text-amber-400 flex items-center gap-2 transition">
+            <i class="fa-solid fa-arrow-left"></i>
+            <span>Volver al catálogo de cursos</span>
+        </a>
+    </div>
+
+    <!-- Ficha informativa del Curso -->
+    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 md:p-8 shadow-xl relative overflow-hidden">
+        <div class="flex flex-col md:flex-row md:items-center justify-between gap-6">
+            <div>
+                <div class="flex items-center gap-3">
+                    <span class="text-xs px-2.5 py-1 rounded-full font-bold uppercase tracking-wider {{ 'bg-emerald-500/10 text-emerald-400 border border-emerald-500/20' if c_activo else 'bg-rose-500/10 text-rose-400 border border-rose-500/20' }}">
+                        {{ 'Activo' if c_activo else 'Inactivo' }}
+                    </span>
+                    <span class="text-xs text-slate-400">ID: {{ curso.id[:8] }}...</span>
+                </div>
+                <h1 class="text-2xl md:text-3xl font-black text-white mt-2">{{ c_nombre }}</h1>
+                <p class="text-slate-400 text-sm mt-1 max-w-2xl">{{ c_desc or 'Sin descripción registrada.' }}</p>
+            </div>
+
+            <!-- Datos económicos y de cobro -->
+            <div class="bg-slate-900/90 border border-slate-800 p-4 rounded-xl flex items-center gap-6">
+                <div>
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Arancel / Costo</span>
+                    <span class="text-2xl font-black text-amber-400">${{ "{:,.2f}".format(c_costo) }}</span>
+                    <span class="text-xs text-slate-400 block mt-0.5">Cobro: <strong>{{ c_periodo }}</strong></span>
+                </div>
+                <div class="border-l border-slate-800 pl-6">
+                    <span class="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Vencimiento</span>
+                    <span class="text-sm font-semibold text-white block mt-1">
+                        Día {{ c_dia_venc }} de cada mes
+                    </span>
+                    <span class="text-xs text-amber-300 block mt-0.5">{{ inscriptos|length }} alumnos cursando</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Sección de Alumnos Inscriptos -->
+    <div class="bg-slate-950/70 border border-slate-800 rounded-2xl p-6 shadow-xl space-y-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+                <h2 class="text-lg font-bold text-white flex items-center gap-2">
+                    <i class="fa-solid fa-users text-amber-400"></i>
+                    <span>Estudiantes Inscriptos ({{ inscriptos|length }})</span>
+                </h2>
+                <p class="text-xs text-slate-400">Listado de alumnos matriculados en este curso y sus estados.</p>
+            </div>
+
+            {% if no_inscriptos|length > 0 %}
+            <button onclick="abrirModalAsignar()" class="px-4 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-xs transition shadow-lg shadow-amber-500/20 flex items-center gap-2">
+                <i class="fa-solid fa-user-plus"></i>
+                <span>Inscribir Alumno a este Curso</span>
+            </button>
+            {% else %}
+            <span class="text-xs text-slate-500 italic bg-slate-900 px-3 py-1.5 rounded-lg border border-slate-800">
+                Todos los alumnos registrados ya están en este curso.
+            </span>
+            {% endif %}
+        </div>
+
+        <!-- Tabla de inscriptos -->
+        <div class="overflow-x-auto">
+            <table class="w-full text-left text-sm text-slate-300">
+                <thead class="bg-slate-900/90 text-xs font-bold uppercase tracking-wider text-slate-400 border-b border-slate-800">
+                    <tr>
+                        <th class="px-6 py-4">Alumno</th>
+                        <th class="px-6 py-4">Contacto</th>
+                        <th class="px-6 py-4">Fecha Inscripción</th>
+                        <th class="px-6 py-4">Estado</th>
+                        <th class="px-6 py-4 text-right">Acciones</th>
+                    </tr>
+                </thead>
+                <tbody class="divide-y divide-slate-800/60">
+                    {% for i in inscriptos %}
+                    {% set st = i.students or {} %}
+                    {% set st_nombre = st.first_name or i.nombre or 'Alumno' %}
+                    {% set st_apellido = st.last_name or i.apellido or '' %}
+                    {% set st_email = st.email or i.email or '' %}
+                    {% set st_phone = st.phone or i.telefono or 'Sin teléfono' %}
+                    {% set i_fecha = (i.assigned_at[:10] if i.assigned_at else i.fecha_inscripcion) or '' %}
+                    {% set i_estado = i.status or i.estado or 'active' %}
+                    {% set i_id = i.id or i.inscripcion_id %}
+                    <tr class="hover:bg-slate-900/40 transition">
+                        <td class="px-6 py-4">
+                            <div class="flex items-center gap-3">
+                                <div class="w-9 h-9 rounded-full bg-amber-500/10 text-amber-400 flex items-center justify-center font-bold text-xs border border-amber-500/20">
+                                    {{ st_nombre[0] }}{{ st_apellido[0] if st_apellido else '' }}
+                                </div>
+                                <div>
+                                    <span class="font-bold text-white block">{{ st_nombre }} {{ st_apellido }}</span>
+                                    <span class="text-xs text-slate-500">ID: {{ i_id[:8] if i_id|string|length > 8 else i_id }}</span>
+                                </div>
+                            </div>
+                        </td>
+                        <td class="px-6 py-4">
+                            <p class="text-xs text-slate-300">{{ st_email }}</p>
+                            <p class="text-xs text-slate-400">{{ st_phone }}</p>
+                        </td>
+                        <td class="px-6 py-4 text-xs text-slate-300">
+                            {{ i_fecha }}
+                        </td>
+                        <td class="px-6 py-4">
+                            <form action="{{ url_for('inscripcion_cambiar_estado', enrollment_id=i_id) }}" method="POST" class="inline">
+                                <input type="hidden" name="curso_id" value="{{ curso.id }}">
+                                <select name="estado" onchange="this.form.submit()" 
+                                        class="text-xs font-semibold px-2.5 py-1 rounded-lg bg-slate-900 border border-slate-700 text-white focus:outline-none focus:border-amber-500">
+                                    <option value="active" {{ 'selected' if i_estado == 'active' }}>Activo</option>
+                                    <option value="paused" {{ 'selected' if i_estado == 'paused' }}>Pausado</option>
+                                    <option value="completed" {{ 'selected' if i_estado == 'completed' }}>Finalizado</option>
+                                </select>
+                            </form>
+                        </td>
+                        <td class="px-6 py-4 text-right">
+                            <form action="{{ url_for('inscripcion_eliminar', enrollment_id=i_id) }}" method="POST" onsubmit="return confirm('¿Seguro que deseas desasignar a {{ st_nombre }} de este curso?')" class="inline">
+                                <input type="hidden" name="curso_id" value="{{ curso.id }}">
+                                <button type="submit" class="p-2 rounded-lg bg-slate-800 hover:bg-rose-950/80 text-slate-400 hover:text-rose-400 text-xs transition border border-transparent hover:border-rose-500/30" title="Dar de baja del curso">
+                                    <i class="fa-solid fa-user-xmark"></i>
+                                </button>
+                            </form>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" class="px-6 py-8 text-center text-slate-500 text-xs">
+                            No hay alumnos asignados a este curso todavía.
+                        </td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+
+<!-- MODAL: ASIGNAR ALUMNO A ESTE CURSO -->
+<div id="modalAsignar" class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+    <div class="bg-slate-900 border border-slate-800 rounded-2xl max-w-md w-full p-6 shadow-2xl relative">
+        <div class="flex items-center justify-between pb-4 border-b border-slate-800">
+            <h3 class="text-base font-bold text-white flex items-center gap-2">
+                <i class="fa-solid fa-user-plus text-amber-400"></i>
+                <span>Inscribir Alumno a {{ c_nombre }}</span>
+            </h3>
+            <button onclick="cerrarModalAsignar()" class="text-slate-400 hover:text-white">
+                <i class="fa-solid fa-xmark text-lg"></i>
+            </button>
+        </div>
+
+        <form action="{{ url_for('inscripcion_crear') }}" method="POST" class="mt-4 space-y-4">
+            <input type="hidden" name="curso_id" value="{{ curso.id }}">
+            <input type="hidden" name="redirect_to" value="curso_detalle">
+
+            <div>
+                <label class="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1">Seleccionar Alumno *</label>
+                <select name="alumno_id" required class="w-full px-3.5 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:outline-none focus:border-amber-500">
+                    <option value="" disabled selected>-- Elige un alumno --</option>
+                    {% for a in no_inscriptos %}
+                        {% set an = a.first_name or a.nombre %}
+                        {% set ap = a.last_name or a.apellido %}
+                        <option value="{{ a.id }}">{{ ap }}, {{ an }} ({{ a.email }})</option>
+                    {% endfor %}
+                </select>
+            </div>
+
+            <div class="pt-4 border-t border-slate-800 flex justify-end gap-3">
+                <button type="button" onclick="cerrarModalAsignar()" class="px-4 py-2 bg-slate-800 hover:bg-slate-700 text-slate-300 font-semibold rounded-xl text-sm transition">
+                    Cancelar
+                </button>
+                <button type="submit" class="px-5 py-2 bg-amber-500 hover:bg-amber-400 text-slate-950 font-bold rounded-xl text-sm transition shadow-lg shadow-amber-500/20">
+                    Inscribir Alumno
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function abrirModalAsignar() {
+        document.getElementById('modalAsignar').classList.remove('hidden');
+    }
+    function cerrarModalAsignar() {
+        document.getElementById('modalAsignar').classList.add('hidden');
+    }
+</script>
+{% endblock %}
